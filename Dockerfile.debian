@@ -1,0 +1,236 @@
+# ─── Stage 1: Build ───────────────────────────────────────────────────────────
+FROM debian:12 AS builder
+
+ARG ASTERISK_VERSION=23.3.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc g++ make autoconf automake libtool patch git ca-certificates \
+        libssl-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        libsqlite3-dev \
+        libncurses-dev \
+        libedit-dev \
+        libcurl4-openssl-dev \
+        uuid-dev \
+        libspeex-dev \
+        libopus-dev \
+        libsrtp2-dev \
+        libunbound-dev \
+        libhiredis-dev \
+        python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/asterisk
+
+RUN git clone --branch releases/23 --depth 1 \
+        https://github.com/asterisk/asterisk.git . \
+    && git checkout tags/${ASTERISK_VERSION} 2>/dev/null || true
+
+# Apply build system patches for hiredis
+COPY patches/asterisk-23/configure.ac.diff         .
+COPY patches/asterisk-23/menuselect-deps.in.diff   .
+COPY patches/asterisk-23/makeopts.in.diff          .
+RUN patch -p1 < configure.ac.diff \
+    && patch -p1 < menuselect-deps.in.diff \
+    && patch -p1 < makeopts.in.diff
+
+# Copy module source into the Asterisk tree
+COPY modules/cdr_redis/cdr_redis.c              cdr/cdr_redis.c
+COPY modules/cdr_redis/cdr_redis.conf.sample    configs/samples/cdr_redis.conf.sample
+
+RUN ./bootstrap.sh \
+    && ./configure \
+        --with-jansson-bundled \
+        --with-pjproject-bundled \
+    # Safety net: force HIREDIS=1 in case bootstrap.sh did not fully regenerate
+    # configure from configure.ac (autoconf toolchain version mismatch).
+    # HIREDIS_LIB comes from makeopts.in — no need to patch makeopts itself.
+    && sed -i '/^HIREDIS=/d' build_tools/menuselect-deps \
+    && echo 'HIREDIS=1' >> build_tools/menuselect-deps \
+    && make menuselect.makeopts \
+    \
+    # CEL — not needed
+    && menuselect/menuselect \
+        --disable cel_beanstalkd \
+        --disable cel_custom \
+        --disable cel_manager \
+        --disable cel_odbc \
+        --disable cel_pgsql \
+        --disable cel_radius \
+        --disable cel_sqlite3_custom \
+        --disable cel_tds \
+        menuselect.makeopts \
+    \
+    # CDR — keep only csv (baseline) and redis
+    && menuselect/menuselect \
+        --disable cdr_adaptive_odbc \
+        --disable cdr_beanstalkd \
+        --disable cdr_custom \
+        --disable cdr_manager \
+        --disable cdr_odbc \
+        --disable cdr_pgsql \
+        --disable cdr_radius \
+        --disable cdr_sqlite3_custom \
+        --disable cdr_tds \
+        --enable cdr_csv \
+        --enable cdr_redis \
+        menuselect.makeopts \
+    \
+    # Channels — keep pjsip, rtp, bridge_media
+    && menuselect/menuselect \
+        --disable chan_console \
+        --disable chan_dahdi \
+        --disable chan_iax2 \
+        --disable chan_motif \
+        --disable chan_unistim \
+        --disable chan_audiosocket \
+        --disable chan_websocket \
+        menuselect.makeopts \
+    \
+    # Codecs — G.711 (ulaw/alaw) and G.722 only
+    && menuselect/menuselect \
+        --disable codec_adpcm \
+        --disable codec_codec2 \
+        --disable codec_dahdi \
+        --disable codec_g726 \
+        --disable codec_gsm \
+        --disable codec_ilbc \
+        --disable codec_lpc10 \
+        --disable codec_resample \
+        --disable codec_speex \
+        menuselect.makeopts \
+    \
+    # Formats — keep pcm, sln, wav
+    && menuselect/menuselect \
+        --disable format_g719 \
+        --disable format_g723 \
+        --disable format_g726 \
+        --disable format_g729 \
+        --disable format_gsm \
+        --disable format_h263 \
+        --disable format_h264 \
+        --disable format_ilbc \
+        --disable format_ogg_speex \
+        --disable format_ogg_vorbis \
+        --disable format_siren14 \
+        --disable format_siren7 \
+        --disable format_vox \
+        --disable format_wav_gsm \
+        menuselect.makeopts \
+    \
+    # Apps — keep what's needed for Local channel tests
+    && menuselect/menuselect \
+        --disable app_adsiprog \
+        --disable app_agent_pool \
+        --disable app_alarmreceiver \
+        --disable app_amd \
+        --disable app_attended_transfer \
+        --disable app_audiosocket \
+        --disable app_authenticate \
+        --disable app_blind_transfer \
+        --disable app_bridgeaddchan \
+        --disable app_bridgewait \
+        --disable app_broadcast \
+        --disable app_celgenuserevent \
+        --disable app_channelredirect \
+        --disable app_chanspy \
+        --disable app_confbridge \
+        --disable app_controlplayback \
+        --disable app_db \
+        --disable app_dictate \
+        --disable app_directed_pickup \
+        --disable app_directory \
+        --disable app_disa \
+        --disable app_dumpchan \
+        --disable app_externalivr \
+        --disable app_festival \
+        --disable app_flash \
+        --disable app_followme \
+        --disable app_getcpeid \
+        --disable app_ivrdemo \
+        --disable app_jack \
+        --disable app_meetme \
+        --disable app_mf \
+        --disable app_milliwatt \
+        --disable app_minivm \
+        --disable app_mixmonitor \
+        --disable app_morsecode \
+        --disable app_mp3 \
+        --disable app_page \
+        --disable app_playtones \
+        --disable app_privacy \
+        --disable app_queue \
+        --disable app_readexten \
+        --disable app_record \
+        --disable app_saycounted \
+        --disable app_sayunixtime \
+        --disable app_sf \
+        --disable app_skel \
+        --disable app_sla \
+        --disable app_sms \
+        --disable app_speech_utils \
+        --disable app_statsd \
+        --disable app_talkdetect \
+        --disable app_transfer \
+        --disable app_voicemail \
+        --disable app_voicemail_imap \
+        --disable app_voicemail_odbc \
+        --disable app_waitforring \
+        --disable app_waitforsilence \
+        --disable app_zapateller \
+        menuselect.makeopts \
+    \
+    && make -j"$(nproc)" \
+    && make install \
+    && make samples
+
+# ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
+FROM debian:12
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libssl3 \
+        libxml2 \
+        libxslt1.1 \
+        libsqlite3-0 \
+        libncurses6 \
+        libedit2 \
+        libcurl4 \
+        libuuid1 \
+        libspeex1 \
+        libopus0 \
+        libsrtp2-1 \
+        libunbound8 \
+        libhiredis0.14 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -d /var/lib/asterisk -s /sbin/nologin asterisk
+
+COPY --from=builder /usr/lib/asterisk/          /usr/lib/asterisk/
+COPY --from=builder /usr/lib/libasterisk*.so*   /usr/lib/
+RUN ldconfig
+COPY --from=builder /usr/sbin/asterisk          /usr/sbin/asterisk
+COPY --from=builder /var/lib/asterisk/          /var/lib/asterisk/
+COPY --from=builder /var/log/asterisk/          /var/log/asterisk/
+COPY --from=builder /var/spool/asterisk/        /var/spool/asterisk/
+
+# Store sample configs separately — entrypoint seeds /etc/asterisk from here
+# when the mounted directory is empty.
+COPY --from=builder /etc/asterisk/             /usr/share/asterisk/etc-defaults/
+RUN mkdir -p /etc/asterisk
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+RUN chown -R asterisk:asterisk \
+        /etc/asterisk \
+        /var/lib/asterisk \
+        /var/log/asterisk \
+        /var/spool/asterisk \
+        /usr/share/asterisk/etc-defaults
+
+VOLUME ["/etc/asterisk"]
+
+# SIP (UDP+TCP), SIP TLS, IAX2, RTP
+EXPOSE 5060/udp 5060/tcp 5061/tcp 4569/udp 10000-20000/udp
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

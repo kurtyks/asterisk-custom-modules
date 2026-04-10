@@ -1,0 +1,28 @@
+services:
+  asterisk:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes:
+      - ./configs/asterisk:/etc/asterisk
+      - asterisk-logs:/var/log/asterisk
+      - asterisk-spool:/var/spool/asterisk
+    networks:
+      - asterisk-net
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - asterisk-net
+
+volumes:
+  asterisk-logs:
+  asterisk-spool:
+  redis-data:
+
+networks:
+  asterisk-net:

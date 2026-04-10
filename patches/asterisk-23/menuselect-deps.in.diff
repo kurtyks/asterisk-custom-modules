@@ -1,0 +1,11 @@
+diff --git a/build_tools/menuselect-deps.in b/build_tools/menuselect-deps.in
+index 52c26e1..b7592f5 100644
+--- a/build_tools/menuselect-deps.in
++++ b/build_tools/menuselect-deps.in
+@@ -1,5 +1,6 @@
+ BLUETOOTH=@PBX_BLUETOOTH@
+ BEANSTALK=@PBX_BEANSTALK@
++HIREDIS=@PBX_HIREDIS@
+ COROSYNC=@PBX_COROSYNC@
+ CRYPTO=@PBX_CRYPTO@
+ BFD=@PBX_BFD@

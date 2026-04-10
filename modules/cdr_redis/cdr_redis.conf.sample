@@ -1,0 +1,40 @@
+;
+; Asterisk CDR Redis Backend
+;
+; Supports three operation modes (see 'mode' below):
+;   hash   — stores each CDR as a Redis Hash (default)
+;   pubsub — publishes each CDR as JSON to a Pub/Sub channel
+;   both   — stores as Hash and publishes to Pub/Sub
+;
+; Requires the hiredis library: https://github.com/redis/hiredis
+;   Debian/Ubuntu: apt install libhiredis-dev
+;   RHEL/Fedora:   dnf install hiredis-devel
+;
+
+[general]
+
+; enabled = yes                  ; Enable this CDR backend (default: no)
+
+; host = 127.0.0.1               ; Redis server address (default: 127.0.0.1)
+; port = 6379                    ; Redis server port    (default: 6379)
+
+; password =                     ; Redis AUTH password  (default: none)
+
+; database = 0                   ; Redis database index (default: 0)
+
+; mode = hash                    ; Operation mode (default: hash):
+;                                ;   hash   — store CDR as Redis Hash only (HSET)
+;                                ;   pubsub — publish CDR as JSON to Pub/Sub only (PUBLISH)
+;                                ;   both   — store as Hash and publish to Pub/Sub
+
+; key_prefix = asterisk:cdr:     ; Prefix prepended to uniqueid to form the Hash key.
+;                                ; Used only in 'hash' and 'both' modes.
+;                                ; (default: asterisk:cdr:)
+
+; ttl = 0                        ; Seconds before the Hash key expires.
+;                                ; 0 means the key never expires. (default: 0)
+;                                ; Used only in 'hash' and 'both' modes.
+
+; channel =                      ; Redis Pub/Sub channel name.
+;                                ; Required when mode = pubsub or mode = both.
+;                                ; Example: channel = asterisk-cdr

@@ -1,0 +1,21 @@
+diff --git a/configure.ac b/configure.ac
+index bc0cf8a..3f30007 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -598,6 +598,7 @@ AST_EXT_LIB_SETUP([OPUS], [Opus], [opus])
+ AST_EXT_LIB_SETUP([OPUSFILE], [Opusfile], [opusfile])
+ AST_EXT_LIB_SETUP([PGSQL], [PostgreSQL], [postgres])
+ AST_EXT_LIB_SETUP([BEANSTALK], [Beanstalk Job Queue], [beanstalk])
++AST_EXT_LIB_SETUP([HIREDIS], [hiredis Redis client], [hiredis])
+ 
+ if test "x${PBX_PJPROJECT}" != "x1" ; then
+ AST_EXT_LIB_SETUP([PJPROJECT], [PJPROJECT], [pjproject])
+@@ -2445,6 +2446,8 @@ AST_EXT_LIB_CHECK([BLUETOOTH], [bluetooth], [ba2str], [bluetooth/bluetooth.h])
+ 
+ AST_EXT_LIB_CHECK([BEANSTALK], [beanstalk], [bs_version], [beanstalk.h])
+ 
++AST_EXT_LIB_CHECK([HIREDIS], [hiredis], [redisConnect], [hiredis/hiredis.h])
++
+ PG_CONFIG=":"
+ if test "${USE_PGSQL}" != "no"; then
+    if test "x${PGSQL_DIR}" != "x"; then

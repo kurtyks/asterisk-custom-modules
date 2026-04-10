@@ -1,0 +1,17 @@
+# Build artifacts
+*.o
+*.so
+*.lo
+*.la
+
+# Docker
+.docker/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*~
+
+# macOS
+.DS_Store
