@@ -28,15 +28,15 @@ cp configs/asterisk/cdr_redis.conf.sample configs/asterisk/cdr_redis.conf
 # edit configs/asterisk/cdr_redis.conf — set host, enabled = yes, etc.
 
 # Build and run (Fedora 43)
-docker compose up --build
+docker compose -f docker/compose.yml up --build
 ```
 
 For Debian 12:
 
 ```bash
-docker compose -f compose.yml up --build
+docker compose -f docker/compose.yml up --build
 # or build the image directly:
-docker build -f Dockerfile.debian -t asterisk-custom:debian .
+docker build -f docker/Dockerfile.debian -t asterisk-custom:debian .
 ```
 
 ---
@@ -57,12 +57,14 @@ asterisk-custom-modules/
 ├── docs/
 │   ├── cdr_redis.md                 # Module documentation
 │   └── build-integration.md        # How Asterisk's build system works
-├── configs/
-│   └── asterisk/                    # Runtime configs (mounted as volume)
-├── Dockerfile                       # Fedora 43 build
-├── Dockerfile.debian                # Debian 12 build
-├── compose.yml
-└── docker-entrypoint.sh
+├── docker/
+│   ├── Dockerfile                   # Fedora 43 build
+│   ├── Dockerfile.debian            # Debian 12 build
+│   ├── compose.yml
+│   ├── entrypoint.sh
+│   └── configs/
+│       └── asterisk/                # Runtime configs (mounted as volume)
+└── ROADMAP.md
 ```
 
 ---

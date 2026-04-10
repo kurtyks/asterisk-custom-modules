@@ -1,6 +1,8 @@
 services:
   asterisk:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     restart: unless-stopped
     depends_on:
       - redis

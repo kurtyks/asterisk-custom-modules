@@ -218,7 +218,7 @@ COPY --from=builder /var/spool/asterisk/        /var/spool/asterisk/
 COPY --from=builder /etc/asterisk/             /usr/share/asterisk/etc-defaults/
 RUN mkdir -p /etc/asterisk
 
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 RUN chown -R asterisk:asterisk \
