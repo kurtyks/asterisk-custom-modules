@@ -97,6 +97,8 @@ Adding a new external library dependency requires three files in
 
 ## Roadmap / future modules
 
+See [ROADMAP.md](ROADMAP.md) for full descriptions and implementation notes.
+
 ### CDR backends
 
 | Module | Backend | Use case |
@@ -106,8 +108,6 @@ Adding a new external library dependency requires three files in
 | `cdr_elasticsearch` | Elasticsearch | Full-text search and Kibana dashboards over CDR data |
 | `cdr_influxdb` | InfluxDB | Time-series storage — native duration/billsec queries |
 | `cdr_mongodb` | MongoDB | Schemaless CDR storage with flexible querying |
-| `cdr_nats` | NATS | Lightweight pub/sub alternative to Kafka |
-| `cdr_http` | HTTP / webhook | POST CDR as JSON to any HTTP endpoint |
 
 ### CEL backends
 
@@ -120,13 +120,12 @@ reconstructing exact call flows and detecting mid-call events.
 | `cel_redis` | Redis | Pub/Sub stream of CEL events as JSON |
 | `cel_kafka` | Apache Kafka | Ordered event log per channel |
 | `cel_elasticsearch` | Elasticsearch | Rich call-flow analytics in Kibana |
-| `cel_http` | HTTP / webhook | Push CEL events to external systems in real time |
 
-### Other
+### Dialplan modules
 
 | Module | Type | Notes |
 |---|---|---|
-| `res_statsd_custom` | Resource | Extended StatsD metrics beyond the built-in `res_statsd` |
+| `func_csv_route` | Dialplan function | Flat-file call router — `${CSV_ROUTE(src,dst)}` returns routing destination based on number patterns and time of day |
 
 ---
 
