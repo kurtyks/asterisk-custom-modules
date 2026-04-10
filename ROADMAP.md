@@ -222,6 +222,30 @@ file = /etc/asterisk/csv_routes.csv
 
 **Dependency:** none (pure C, standard library only)
 
+**Implementation notes:**
+
+- **Pattern matching** — use `ast_extension_match()` from the Asterisk core.
+  It handles the full dialplan pattern syntax (`_X.`, `_Z.`, `_[2-4].`,
+  exact numbers) without any custom parser. Signature:
+  ```c
+  int ast_extension_match(const char *pattern, const char *data);
+  ```
+
+- **Midnight wrap-around** — when `hour_from > hour_to` the time window
+  crosses midnight (e.g. 22–6). Detection and check:
+  ```c
+  if (hour_from > hour_to)
+      match = (now_hour >= hour_from || now_hour < hour_to);
+  else
+      match = (now_hour >= hour_from && now_hour < hour_to);
+  ```
+
+- **Hot reload** — the routing table is a heap-allocated array protected by
+  `AST_RWLOCK_DEFINE_STATIC`. On `reload`, a new table is parsed, the write
+  lock is taken, the old table is freed, the pointer is swapped, the lock is
+  released. In-flight `CSV_ROUTE()` calls hold the read lock for the duration
+  of the lookup and are not interrupted. Total implementation: ~300–400 lines of C.
+
 ---
 
 ## Priority / suggested order
